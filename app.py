@@ -1952,10 +1952,10 @@ def RegulateOD(M):
 
     if(sysData[M]['Chemostat']['ON']==1):
         inputPumpRate=float(sysData[M]['Chemostat']['p1'])
-	
+
     if sysData[M]['inputPump'] != inputPump:
-	return
-	
+	    return
+
     #Set new Pump targets
     sysData[M][inputPump]['target']=inputPumpRate*inputPumpDirection
     sysData[M]['Pump2']['target']=(inputPumpRate*4+0.07)*Pump2Direction
@@ -2032,15 +2032,15 @@ def TogglePumps(M, timeList):
     :param timeList: List of times (minutes) after the experiment starts, assumes to be sorted
     """
     global sysData
-    # Avoid small times
-    if (timeList[0] < 1):
-        return
-
     # Get time running in seconds
     now = datetime.now()
     elapsedTime = now - sysData[M]['Experiment']['startTimeRaw']
     elapsedTimeMinutes = elapsedTime.total_seconds() / 60
     targetSleep = 0
+
+    # Avoid small times or time less than the current time
+    if timeList[0] < 0.5 or elapsedTimeMinutes > timeList[-1]:
+        return
 
     if len(timeList) == 1:
         targetSleep = timeList[0] * 60
@@ -2051,15 +2051,15 @@ def TogglePumps(M, timeList):
             if abs(elapsedTimeMinutes - t) < minDist:
                 minDistIndex = i
                 minDist = abs(elapsedTimeMinutes - t)
-        if i == len(timeList) - 1:
+        if minDistIndex == len(timeList) - 1:
             return
         else:
-            j = i
+            j = minDistIndex
             while timeList[j] < elapsedTimeMinutes:
                 j = j + 1
                 if j == len(timeList):
                     return
-            targetSleep = (timeList[i + 1] - elapsedTimeMinutes) * 60
+            targetSleep = (timeList[j] - elapsedTimeMinutes) * 60
 
     # Check periodically if the experiment is off
     period = 10
@@ -2068,30 +2068,31 @@ def TogglePumps(M, timeList):
         if sysData[M]['Experiment']['ON'] == 0:
             sysData[M]['Pump1']['target'] = 0.0
             sysData[M]['Pump3']['target'] = 0.0
-            sysData[M]['currentPump'] = 'Pump1'
+            sysData[M]['inputPump'] = 'Pump1'
             return
-        if targetSleep <= 30:
+        if targetSleep <= period:
             time.sleep(targetSleep)
         else:
             time.sleep(period)
         targetSleep = targetSleep - period
 
-    currentPump = sysData[M]['currentPump']
+    currentPump = sysData[M]['inputPump']
     if currentPump == 'Pump1':
         newPump = 'Pump3'
     else:
         newPump = 'Pump1'
 
+    addTerminal(M,'Changing pump to ' + newPump)
     sysData[M][newPump]['target'] = sysData[M][currentPump]['target']
     sysData[M][newPump]['direction'] = sysData[M][currentPump]['direction']
-    sysData[M]['currentPump'] = newPump
+    sysData[M]['inputPump'] = newPump
     sysData[M][currentPump]['target'] = 0.0
 
     # If the experiment is stopped set default pump and return
     if sysData[M]['Experiment']['ON'] == 0:
         sysData[M]['Pump1']['target'] = 0.0
         sysData[M]['Pump3']['target'] = 0.0
-        sysData[M]['currentPump'] = 'Pump1'
+        sysData[M]['inputPump'] = 'Pump1'
         return
 
     toggleThread = Thread(target=TogglePumps, args=(M, timeList))
@@ -2106,7 +2107,7 @@ def ExperimentReset():
     return ('', 204)
 
 @application.route("/Experiment/<value>/<M>",methods=['POST'])
-def ExperimentStartStop(M,value,*args):
+def ExperimentStartStop(M,value):
     #Stops or starts an experiment.
     global sysData
     global sysDevices
@@ -2139,17 +2140,26 @@ def ExperimentStartStop(M,value,*args):
         sysDevices[M]['Experiment'].start();
 
         # Check if the pumps need to be toggled
-        if len(args) > 0 and isinstance(args[0], list):
-            try:
-                if len(args[0]) > 0:
-                    timeList = [float(x) for x in args[0]]
-                    timeList.sort()
-                    toggleThread = Thread(target=TogglePumps, args=(M, timeList))
-                    toggleThread.setDaemon(True)
-                    toggleThread.start()
+        fname = 'PumpToggleTimes_' + str(M) + '.csv'
+        rows = []
+        if os.path.isfile(fname):
+            with open(fname, 'r', encoding='utf-8-sig') as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    rows.append(row)
+                row = rows[0]
 
-            except:
-                addTerminal(M,'ERROR: Unknown type in time list')
+            if isinstance(row, list):
+                try:
+                    if len(row) > 0:
+                        timeList = [float(x) for x in row]
+                        timeList.sort()
+                        toggleThread = Thread(target=TogglePumps, args=(M, timeList))
+                        toggleThread.setDaemon(True)
+                        toggleThread.start()
+
+                except:
+                    addTerminal(M,'ERROR: Unknown type in time list')
 
     else:
         sysData[M]['Experiment']['ON']=0
