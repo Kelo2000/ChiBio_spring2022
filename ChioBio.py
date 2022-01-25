@@ -1952,7 +1952,10 @@ def RegulateOD(M):
 
     if(sysData[M]['Chemostat']['ON']==1):
         inputPumpRate=float(sysData[M]['Chemostat']['p1'])
-
+	
+    if sysData[M]['inputPump'] != inputPump:
+	return
+	
     #Set new Pump targets
     sysData[M][inputPump]['target']=inputPumpRate*inputPumpDirection
     sysData[M]['Pump2']['target']=(inputPumpRate*4+0.07)*Pump2Direction
