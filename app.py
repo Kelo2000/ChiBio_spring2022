@@ -2121,7 +2121,9 @@ def ExperimentStartStop(M,value):
     if (value and (sysData[M]['Experiment']['ON']==0)):
 
         sysData[M]['Experiment']['ON']=1
+        sysData[M]['inputPump'] = 'Pump1'
         addTerminal(M,'Experiment Started')
+	addTerminal(M,'Setting input pump as Pump1')
 
         if (sysData[M]['Experiment']['cycles']==0):
             now=datetime.now()
