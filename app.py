@@ -2045,14 +2045,17 @@ def TogglePumps(M, timeList):
     if len(timeList) == 1:
         targetSleep = timeList[0] * 60
     else:
+        # Find closest time value to current time
         minDist = timeList[-1]
         minDistIndex = 0
         for i, t in enumerate(timeList):
             if abs(elapsedTimeMinutes - t) < minDist:
                 minDistIndex = i
                 minDist = abs(elapsedTimeMinutes - t)
+        # If the closest is the final time then stop
         if minDistIndex == len(timeList) - 1:
             return
+        # Otherwise find the next time to wait until
         else:
             j = minDistIndex
             while timeList[j] < elapsedTimeMinutes:
@@ -2062,7 +2065,7 @@ def TogglePumps(M, timeList):
             targetSleep = (timeList[j] - elapsedTimeMinutes) * 60
 
     # Check periodically if the experiment is off
-    period = 10
+    period = 8
     while targetSleep > 0:
         # If the experiment is stopped set default pump and return
         if sysData[M]['Experiment']['ON'] == 0:
@@ -2123,7 +2126,7 @@ def ExperimentStartStop(M,value):
         sysData[M]['Experiment']['ON']=1
         sysData[M]['inputPump'] = 'Pump1'
         addTerminal(M,'Experiment Started')
-	addTerminal(M,'Setting input pump as Pump1')
+        addTerminal(M,'Setting input pump as Pump1')
 
         if (sysData[M]['Experiment']['cycles']==0):
             now=datetime.now()
