@@ -27,6 +27,26 @@ lock=Lock()
 
 #Initialise data structures.
 
+# These can be changed, these pumps will start the experiment
+sysDefault = {
+    'M0' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M1' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M2' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M3' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M4' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M5' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M6' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M7' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'}
+}
+
 #Sysdata is a structure created for each device and contains the setup / measured data related to that device during an experiment. All of this information is passed into the user interface during an experiment.
 sysData = {'M0' : {
    'UIDevice' : 'M0',
@@ -81,10 +101,6 @@ sysData = {'M0' : {
                 'LASER650' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0}},
     'inputPump' : 'Pump1',
     'outputPump' : 'Pump2',
-
-    # These can be changed, these pumps will start the experiment
-    'default_inputPump' : 'Pump1',
-    'default_outputPump' : 'Pump2'
    }}
 
 
@@ -2080,9 +2096,9 @@ def TogglePumps(M, timeList):
     while targetSleep > 0:
         # If the experiment is stopped set default pump and return
         if sysData[M]['Experiment']['ON'] == 0:
-            sysData[M]['Pump1']['target'] = 0.0
-            sysData[M]['Pump3']['target'] = 0.0
-            sysData[M]['inputPump'] = 'Pump1'
+            sysData[M][sysDefault[M]['default_inputPump']]['target'] = 0.0
+            sysData[M][sysDefault[M]['toggled_inputPump']]['target'] = 0.0
+            sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
             return
         if targetSleep <= period:
             time.sleep(targetSleep)
@@ -2091,10 +2107,10 @@ def TogglePumps(M, timeList):
         targetSleep = targetSleep - period
 
     currentPump = sysData[M]['inputPump']
-    if currentPump == 'Pump1':
-        newPump = 'Pump3'
+    if currentPump == sysDefault[M]['default_inputPump']:
+        newPump = sysDefault[M]['toggled_inputPump']
     else:
-        newPump = 'Pump1'
+        newPump = sysDefault[M]['default_inputPump']
 
     addTerminal(M,'Changing pump to ' + newPump)
     sysData[M][newPump]['target'] = sysData[M][currentPump]['target']
@@ -2104,9 +2120,9 @@ def TogglePumps(M, timeList):
 
     # If the experiment is stopped set default pump and return
     if sysData[M]['Experiment']['ON'] == 0:
-        sysData[M]['Pump1']['target'] = 0.0
-        sysData[M]['Pump3']['target'] = 0.0
-        sysData[M]['inputPump'] = 'Pump1'
+        sysData[M][sysDefault[M]['default_inputPump']]['target'] = 0.0
+        sysData[M][sysDefault[M]['toggled_inputPump']]['target'] = 0.0
+        sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
         return
 
     toggleThread = Thread(target=TogglePumps, args=(M, timeList))
@@ -2135,11 +2151,11 @@ def ExperimentStartStop(M,value):
     if (value and (sysData[M]['Experiment']['ON']==0)):
 
         sysData[M]['Experiment']['ON']=1
-        sysData[M]['inputPump'] = sysData[M]['default_inputPump']
-        sysData[M]['outputPump'] = sysData[M]['default_outputPump']
+        sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
+        sysData[M]['outputPump'] = sysDefault[M]['default_outputPump']
         addTerminal(M,'Experiment Started')
-        addTerminal(M,'Setting input pump as ' + sysData[M]['default_inputPump'])
-        addTerminal(M,'Setting output pump as ' + sysData[M]['default_outputPump'])
+        addTerminal(M,'Setting input pump as ' + sysDefault[M]['default_inputPump'])
+        addTerminal(M,'Setting output pump as ' + sysDefault[M]['default_outputPump'])
 
         if (sysData[M]['Experiment']['cycles']==0):
             now=datetime.now()
