@@ -27,7 +27,7 @@ lock=Lock()
 
 #Initialise data structures.
 
-# These can be changed, these pumps will start the experiment
+# @Quan: These can be changed, these pumps will start the experiment
 sysDefault = {
     'M0' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
             'toggled_inputPump': 'Pump3'},
@@ -99,6 +99,7 @@ sysData = {'M0' : {
                 'LEDF' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0},
                 'LEDG' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0},
                 'LASER650' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0}},
+    # @Quan: These will be changed during the experiment,
     'inputPump' : 'Pump1',
     'outputPump' : 'Pump2',
    }}
@@ -1906,9 +1907,9 @@ def RegulateOD(M):
         TargetOD=sysData[M]['OD']['target']
         Zigzag(M) #Function that calculates new target pump rates, and sets pumps to desired rates.
 
-    # Grab the current input pump (is this thread-safe?)
+    # @Quan: Grab the current input pump (is this thread-safe?)
     inputPump = sysData[M]['inputPump']
-    # Grab the current output pump
+    # @Quan: Grab the current output pump
     outputPump = sysData[M]['outputPump']
 
     inputPumpCurrent=abs(sysData[M][inputPump]['target'])
@@ -2052,8 +2053,9 @@ def Zigzag(M):
 
     return
 
+# @Quan: Function to toggle pumps at specified times
 def TogglePumps(M, timeList):
-    """ Toggle the input pumps at times specified by the input list
+    """ @Quan: Toggle the input pumps at times specified by the input list
 
     :param M: Reactor string
     :param timeList: List of times (minutes) after the experiment starts, assumes to be sorted
@@ -2067,6 +2069,7 @@ def TogglePumps(M, timeList):
 
     # Avoid small times or time less than the current time
     if timeList[0] < 0.5 or elapsedTimeMinutes > timeList[-1]:
+        addTerminal(M,'ERROR: Wrong time list, disabling pump switching')
         return
 
     if len(timeList) == 1:
@@ -2081,6 +2084,7 @@ def TogglePumps(M, timeList):
                 minDist = abs(elapsedTimeMinutes - t)
         # If the closest is the final time then stop
         if minDistIndex == len(timeList) - 1:
+            addTerminal(M,'Disabling pump switching')
             return
         # Otherwise find the next time to wait until
         else:
@@ -2088,6 +2092,7 @@ def TogglePumps(M, timeList):
             while timeList[j] < elapsedTimeMinutes:
                 j = j + 1
                 if j == len(timeList):
+                    addTerminal(M,'Disabling pump switching')
                     return
             targetSleep = (timeList[j] - elapsedTimeMinutes) * 60
 
@@ -2154,6 +2159,8 @@ def ExperimentStartStop(M,value):
         sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
         sysData[M]['outputPump'] = sysDefault[M]['default_outputPump']
         addTerminal(M,'Experiment Started')
+
+        # @Quan: Display input/output pumps to the screen
         addTerminal(M,'Setting input pump as ' + sysDefault[M]['default_inputPump'])
         addTerminal(M,'Setting output pump as ' + sysDefault[M]['default_outputPump'])
 
@@ -2173,7 +2180,7 @@ def ExperimentStartStop(M,value):
         sysDevices[M]['Experiment'].setDaemon(True)
         sysDevices[M]['Experiment'].start();
 
-        # Check if the pumps need to be toggled
+        # @Quan: Check if the pumps need to be toggled
         fname = 'PumpToggleTimes_' + str(M) + '.csv'
         rows = []
         if os.path.isfile(fname):
@@ -2193,7 +2200,7 @@ def ExperimentStartStop(M,value):
                         toggleThread.start()
 
                 except:
-                    addTerminal(M,'ERROR: Unknown type in time list')
+                    addTerminal(M,'ERROR: Unknown type in .csv time list file, pump switching disabled')
 
     else:
         sysData[M]['Experiment']['ON']=0
