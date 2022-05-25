@@ -27,6 +27,26 @@ lock=Lock()
 
 #Initialise data structures.
 
+# @Quan: These can be changed, these pumps will start the experiment
+sysDefault = {
+    'M0' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M1' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M2' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M3' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M4' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M5' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M6' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'},
+    'M7' : {'default_inputPump': 'Pump1', 'default_outputPump': 'Pump2',
+            'toggled_inputPump': 'Pump3'}
+}
+
 #Sysdata is a structure created for each device and contains the setup / measured data related to that device during an experiment. All of this information is passed into the user interface during an experiment.
 sysData = {'M0' : {
    'UIDevice' : 'M0',
@@ -79,7 +99,9 @@ sysData = {'M0' : {
                 'LEDF' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0},
                 'LEDG' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0},
                 'LASER650' : {'nm410' : 0, 'nm440' : 0, 'nm470' : 0, 'nm510' : 0, 'nm550' : 0, 'nm583' : 0, 'nm620' : 0, 'nm670' : 0,'CLEAR' : 0,'NIR' : 0}},
-    'inputPump' : 'Pump1'
+    # @Quan: These will be changed during the experiment,
+    'inputPump' : 'Pump1',
+    'outputPump' : 'Pump2',
    }}
 
 
@@ -659,6 +681,7 @@ def SetOutput(M,item):
         SetOutputOn(M,'Pump1',0)
         SetOutputOn(M,'Pump2',0) #We turn pumps off when we switch OD state
         SetOutputOn(M,'Pump3',0)
+        SetOutputOn(M,'Pump4',0)
     elif (item=='Zigzag'):
         sysData[M]['Zigzag']['target']=5.0
         sysData[M]['Zigzag']['SwitchPoint']=sysData[M]['Experiment']['cycles']
@@ -1176,8 +1199,9 @@ def CustomProgram(M):
         timept=int(sysData[M]['Custom']['Status']) #This is the timestep as we follow in minutes
         sysData[M]['Custom']['Status']=timept+1 #Increment time as we have entered the loop another time!
 
-        Pump2Ontime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M]['Pump2']['target'])*sysData[M]['Pump2']['ON']+0.5 #The amount of time Pump2 is going to be on for following RegulateOD above.
-        time.sleep(Pump2Ontime) #Pause here is to prevent output pumping happening at the same time as stirring.
+        outputPump = sysData[M]['outputPump']
+        outputPumpOntime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M][outputPump]['target'])*sysData[M][outputPump]['ON']+0.5 #The amount of time outputPump is going to be on for following RegulateOD above.
+        time.sleep(outputPumpOntime) #Pause here is to prevent output pumping happening at the same time as stirring.
 
         timelength=300 #Time between doses in minutes
         if(timept%timelength==2): #So this happens every 5 hours!
@@ -1201,8 +1225,9 @@ def CustomProgram(M):
         timept=int(sysData[M]['Custom']['Status']) #This is the timestep as we follow in minutes
         sysData[M]['Custom']['Status']=timept+1 #Increment time as we have entered the loop another time!
 
-        Pump2Ontime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M]['Pump2']['target'])*sysData[M]['Pump2']['ON']+0.5 #The amount of time Pump2 is going to be on for following RegulateOD above.
-        time.sleep(Pump2Ontime) #Pause here is to prevent output pumping happening at the same time as stirring.
+        outputPump = sysData[M]['outputPump']
+        outputPumpOntime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M][outputPump]['target'])*sysData[M][outputPump]['ON']+0.5 #The amount of time outputPump is going to be on for following RegulateOD above.
+        time.sleep(outputPumpOntime) #Pause here is to prevent output pumping happening at the same time as stirring.
 
         timelength=300 #Time between doses in minutes
         if(timept%timelength==2): #So this happens every 5 hours!
@@ -1882,12 +1907,15 @@ def RegulateOD(M):
         TargetOD=sysData[M]['OD']['target']
         Zigzag(M) #Function that calculates new target pump rates, and sets pumps to desired rates.
 
-    # Grab the current input pump (is this thread-safe?)
+    # @Quan: Grab the current input pump (is this thread-safe?)
     inputPump = sysData[M]['inputPump']
+    # @Quan: Grab the current output pump
+    outputPump = sysData[M]['outputPump']
+
     inputPumpCurrent=abs(sysData[M][inputPump]['target'])
-    Pump2Current=abs(sysData[M]['Pump2']['target'])
+    outputPumpCurrent=abs(sysData[M][outputPump]['target'])
     inputPumpDirection=sysData[M][inputPump]['direction']
-    Pump2Direction=sysData[M]['Pump2']['direction']
+    outputPumpDirection=sysData[M][outputPump]['direction']
 
 
 
@@ -1958,10 +1986,10 @@ def RegulateOD(M):
 
     #Set new Pump targets
     sysData[M][inputPump]['target']=inputPumpRate*inputPumpDirection
-    sysData[M]['Pump2']['target']=(inputPumpRate*4+0.07)*Pump2Direction
+    sysData[M][outputPump]['target']=(inputPumpRate*4+0.07)*outputPumpDirection
 
     if(sysData[M]['Experiment']['cycles']%5==1): #Every so often we do a big output pump to make sure tubes are clear.
-        sysData[M]['Pump2']['target']=0.25*sysData[M]['Pump2']['direction']
+        sysData[M][outputPump]['target']=0.25*sysData[M][outputPump]['direction']
 
 
 
@@ -1973,13 +2001,13 @@ def RegulateOD(M):
             pastpumping=pastpumping+abs(sysData[M][inputPump]['record'][pv])
 
         if pastpumping==0.0:
-            sysData[M]['Pump2']['target']=0.0
+            sysData[M][outputPump]['target']=0.0
             sysData[M][inputPump]['target']=0.0 #This should be equal to 0 anyway.
 
 
 
     SetOutputOn(M,inputPump,1)
-    SetOutputOn(M,'Pump2',1)
+    SetOutputOn(M,outputPump,1)
 
 
     if (sysData[M]['Zigzag']['ON']==1): #If the zigzag growth estimation is running then we change OD setpoint appropriately.
@@ -2025,8 +2053,9 @@ def Zigzag(M):
 
     return
 
+# @Quan: Function to toggle pumps at specified times
 def TogglePumps(M, timeList):
-    """ Toggle the input pumps at times specified by the input list
+    """ @Quan: Toggle the input pumps at times specified by the input list
 
     :param M: Reactor string
     :param timeList: List of times (minutes) after the experiment starts, assumes to be sorted
@@ -2040,6 +2069,7 @@ def TogglePumps(M, timeList):
 
     # Avoid small times or time less than the current time
     if timeList[0] < 0.5 or elapsedTimeMinutes > timeList[-1]:
+        addTerminal(M,'ERROR: Wrong time list, disabling pump switching')
         return
 
     if len(timeList) == 1:
@@ -2054,6 +2084,7 @@ def TogglePumps(M, timeList):
                 minDist = abs(elapsedTimeMinutes - t)
         # If the closest is the final time then stop
         if minDistIndex == len(timeList) - 1:
+            addTerminal(M,'Disabling pump switching')
             return
         # Otherwise find the next time to wait until
         else:
@@ -2061,6 +2092,7 @@ def TogglePumps(M, timeList):
             while timeList[j] < elapsedTimeMinutes:
                 j = j + 1
                 if j == len(timeList):
+                    addTerminal(M,'Disabling pump switching')
                     return
             targetSleep = (timeList[j] - elapsedTimeMinutes) * 60
 
@@ -2069,9 +2101,9 @@ def TogglePumps(M, timeList):
     while targetSleep > 0:
         # If the experiment is stopped set default pump and return
         if sysData[M]['Experiment']['ON'] == 0:
-            sysData[M]['Pump1']['target'] = 0.0
-            sysData[M]['Pump3']['target'] = 0.0
-            sysData[M]['inputPump'] = 'Pump1'
+            sysData[M][sysDefault[M]['default_inputPump']]['target'] = 0.0
+            sysData[M][sysDefault[M]['toggled_inputPump']]['target'] = 0.0
+            sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
             return
         if targetSleep <= period:
             time.sleep(targetSleep)
@@ -2080,10 +2112,10 @@ def TogglePumps(M, timeList):
         targetSleep = targetSleep - period
 
     currentPump = sysData[M]['inputPump']
-    if currentPump == 'Pump1':
-        newPump = 'Pump3'
+    if currentPump == sysDefault[M]['default_inputPump']:
+        newPump = sysDefault[M]['toggled_inputPump']
     else:
-        newPump = 'Pump1'
+        newPump = sysDefault[M]['default_inputPump']
 
     addTerminal(M,'Changing pump to ' + newPump)
     sysData[M][newPump]['target'] = sysData[M][currentPump]['target']
@@ -2093,9 +2125,9 @@ def TogglePumps(M, timeList):
 
     # If the experiment is stopped set default pump and return
     if sysData[M]['Experiment']['ON'] == 0:
-        sysData[M]['Pump1']['target'] = 0.0
-        sysData[M]['Pump3']['target'] = 0.0
-        sysData[M]['inputPump'] = 'Pump1'
+        sysData[M][sysDefault[M]['default_inputPump']]['target'] = 0.0
+        sysData[M][sysDefault[M]['toggled_inputPump']]['target'] = 0.0
+        sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
         return
 
     toggleThread = Thread(target=TogglePumps, args=(M, timeList))
@@ -2124,9 +2156,13 @@ def ExperimentStartStop(M,value):
     if (value and (sysData[M]['Experiment']['ON']==0)):
 
         sysData[M]['Experiment']['ON']=1
-        sysData[M]['inputPump'] = 'Pump1'
+        sysData[M]['inputPump'] = sysDefault[M]['default_inputPump']
+        sysData[M]['outputPump'] = sysDefault[M]['default_outputPump']
         addTerminal(M,'Experiment Started')
-        addTerminal(M,'Setting input pump as Pump1')
+
+        # @Quan: Display input/output pumps to the screen
+        addTerminal(M,'Setting input pump as ' + sysDefault[M]['default_inputPump'])
+        addTerminal(M,'Setting output pump as ' + sysDefault[M]['default_outputPump'])
 
         if (sysData[M]['Experiment']['cycles']==0):
             now=datetime.now()
@@ -2134,8 +2170,8 @@ def ExperimentStartStop(M,value):
             sysData[M]['Experiment']['startTime']=timeString
             sysData[M]['Experiment']['startTimeRaw']=now
 
-        sysData[M]['Pump1']['direction']=1.0 #Sets pumps to go forward.
-        sysData[M]['Pump2']['direction']=1.0
+        sysData[M][sysData[M]['inputPump']]['direction']=1.0 #Sets pumps to go forward.
+        sysData[M][sysData[M]['outputPump']]['direction']=1.0
 
         turnEverythingOff(M)
 
@@ -2144,7 +2180,7 @@ def ExperimentStartStop(M,value):
         sysDevices[M]['Experiment'].setDaemon(True)
         sysDevices[M]['Experiment'].start();
 
-        # Check if the pumps need to be toggled
+        # @Quan: Check if the pumps need to be toggled
         fname = 'PumpToggleTimes_' + str(M) + '.csv'
         rows = []
         if os.path.isfile(fname):
@@ -2164,7 +2200,7 @@ def ExperimentStartStop(M,value):
                         toggleThread.start()
 
                 except:
-                    addTerminal(M,'ERROR: Unknown type in time list')
+                    addTerminal(M,'ERROR: Unknown type in .csv time list file, pump switching disabled')
 
     else:
         sysData[M]['Experiment']['ON']=0
@@ -2173,6 +2209,7 @@ def ExperimentStartStop(M,value):
         SetOutputOn(M,'Pump1',0)
         SetOutputOn(M,'Pump2',0)
         SetOutputOn(M,'Pump3',0)
+        SetOutputOn(M,'Pump4',0)
         SetOutputOn(M,'Stir',0)
         SetOutputOn(M,'Thermostat',0)
 
@@ -2252,9 +2289,9 @@ def runExperiment(M,placeholder):
         CustomThread.setDaemon(True)
         CustomThread.start();
 
-
-    Pump2Ontime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M]['Pump2']['target'])*sysData[M]['Pump2']['ON']+0.5 #The amount of time Pump2 is going to be on for following RegulateOD above.
-    time.sleep(Pump2Ontime) #Pause here is to prevent output pumping happening at the same time as stirring.
+    outputPump = sysData[M]['outputPump']
+    outputPumpOntime=sysData[M]['Experiment']['cycleTime']*1.05*abs(sysData[M][outputPump]['target'])*sysData[M][outputPump]['ON']+0.5 #The amount of time outputPump is going to be on for following RegulateOD above.
+    time.sleep(outputPumpOntime) #Pause here is to prevent output pumping happening at the same time as stirring.
 
     SetOutputOn(M,'Stir',1) #Start stirring again.
 
