@@ -24,6 +24,7 @@ pumps and wait on a separate thread. Inside the `ExperimentStartStop` I also add
 is there, and if yes proceed with the pump toggling.
 
 @Malak & Lukelo: 
+
 Task1:Delay the switching on of Pump2 to work after pump1 is on. Currently when we switch on 'OD Regulation', outlet pump 2 turns on immediately even if the OD is below the target. Since switching it on very early in the experiment is unnecessary and leads to waring out the tubings quicker, it would be best if it switched on once the OD goes above the limit (after Pump1 is switched on).
 Changes made:- Line 1960(Original file) and 1997(Quran’s file): changed 15 to 0 so that pump1 turns on from the beginning 
 
