@@ -22,3 +22,10 @@ pump switching has ended.
 `outputPump` instead, so that these can be changed during runtime. The `TogglePumps` function was added to toggle the
 pumps and wait on a separate thread. Inside the `ExperimentStartStop` I also added some code to check if the `.csv` file
 is there, and if yes proceed with the pump toggling.
+
+@Malak & Lukelo: 
+Task1:Delay the switching on of Pump2 to work after pump1 is on. Currently when we switch on 'OD Regulation', outlet pump 2 turns on immediately even if the OD is below the target. Since switching it on very early in the experiment is unnecessary and leads to waring out the tubings quicker, it would be best if it switched on once the OD goes above the limit (after Pump1 is switched on).
+Changes made:- Line 1960(Original file) and 1997(Quran’s file): changed 15 to 0 so that pump1 turns on from the beginning 
+
+Task3: Get rid of the normalization of fluorescence over time. This can be seen in the real time fluorescence graph 'Normalized FP Emission' Vs. 'Time'. The code calculates Real time fluorescence as  FP_Emit / FP_base. Hence “Normalized Emission values” on the Y-Axis. If we can get rid of this division/normalization would be great. Maybe through adding an “OFF” selection under baseband dropdown list on the GUI (the default is clear), or removing the division altogether.
+Changes made: Line 1639 and 1640 (in original file) and 1669 and 1670 (Quan’s file): remove the denominator completely
